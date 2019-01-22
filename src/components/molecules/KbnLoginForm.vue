@@ -31,7 +31,7 @@
     </div>
     <div class="form-actions">
       <KbnButton
-        :disabled="disabledLoginAction"
+        :disabled="disableLoginAction"
         @click="handleClick">ログイン</KbnButton>
       <p
         v-if="progress"
@@ -45,8 +45,8 @@
 
 <script>
 import KbnButton from '@/components/atoms/KbnButton'
-const required = val => !val.trim()
-const REGEX_EMAIL = /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/
+const required = val => !!val.trim()
+const REGEX_EMAIL = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 
 export default {
   name: 'KbnLoginForm',
@@ -76,7 +76,7 @@ export default {
       return {
         email: {
           required: required(this.email),
-          format: REGEX_EMAIL(this.email)
+          format: REGEX_EMAIL.test(this.email)
         },
         password: {
           required: required(this.password)
@@ -93,7 +93,65 @@ export default {
         if (!valid) { break }
       }
       return valid
+    },
+    disableLoginAction () {
+      return !this.valid || this.progress
+    }
+  },
+
+  methods: {
+    resetError () {
+      this.error = ''
+    },
+    handleClick (ev) {
+      if (this.disableLoginAction) {
+        return
+      }
+      this.progress = true
+      this.error = ''
+      this.$nextTick(() => {
+        this.onlogin({
+          email: this.email,
+          password: this.password
+        })
+          .catch(err => {
+            this.error = err.message
+          })
+          .then(() => {
+            this.progress = false
+          })
+      })
     }
   }
 }
 </script>
+
+<style scoped>
+form {
+  display: block;
+  margin: 0 auto;
+  text-align: left;
+}
+label {
+  display: block;
+}
+input {
+  width: 100%;
+  padding: .5em;
+  font: inherit;
+}
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: .25em 0;
+}
+ul li {
+  font-size: .5em;
+}
+.validation-errors {
+  height: 32px;
+}
+.form-actions p {
+  font-size: .5em;
+}
+</style>
